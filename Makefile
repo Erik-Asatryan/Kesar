@@ -1,56 +1,78 @@
-all: clean create_directories obj_files  encoder.so_decoder.so_files linking
+all: clean create_directories obj/main.o obj/encoder.o obj/second_main.o obj/decoder.o lib/libencoder_shared.so  lib/libdecoder_shared.so linking_first.o linking_second.o
+
+UNSEEN = @
+P = echo
+W = g++
+SHARED = -L./lib -Wl,-rpath=./lib
+MAKE1 = bin/encoder_shared
+MAKE2 = bin/decoder_shared
+CLEAN = rm -rf lib bin obj
+FPIC = -shared -fPIC
+-lE = -lencoder_shared -o
+-lD = -ldecoder_shared -o
+DESIGN := "|-------------------------|"
+DESIGN1 := "|"
+DESIGN2 := "|"
 
 create_directories:
-	@echo "|-------------------------|"
-	@echo "|Creating directories...  |"
-	@echo "|-------------------------|"
+	$(UNSEEN)$P $(DESIGN)
+	$(UNSEEN)$P $(DESIGN1)"Creating directories...  "$(DESIGN2)
+	$(UNSEEN)$P $(DESIGN)
 	@mkdir -p lib bin obj
 
-obj_files:
-	@echo "|-------------------------|"
-	@echo "|Creating encoder.o...    |"
-	@echo "|-------------------------|"
-	@g++ -c src/main.cpp -o obj/main.o
-	@echo "|-------------------------|"
-	@echo "|Creating main.o...       |"
-	@echo "|-------------------------|"
-	@g++ -c encoder/encoder.cpp -o obj/encoder.o
-	@echo "|-------------------------|"
-	@echo "|Creating decoder.o...    |"
-	@echo "|-------------------------|"
-	@g++ -c src/second_main.cpp -o obj/second_main.o
-	@echo "|-------------------------|"
-	@echo "|Creating second_main.o...|"
-	@echo "|-------------------------|"
-	@g++ -c decoder/decoder.cpp -o obj/decoder.o
-	
-encoder.so_decoder.so_files:
-	@g++ -shared -fPIC obj/encoder.o -o lib/libencoder_shared.so	
-	@g++ -shared -fPIC obj/decoder.o -o lib/libdecoder_shared.so
 
-linking:
-	@echo "|-------------------------|"
-	@echo "|Path importing...        |"
-	@echo "|-------------------------|"
-	@export LD_LIBRARY_PATH=$(LD_LIBRARY_PATH):`pwd`
-	@echo "|-------------------------|"
-	@echo "|Shared libraryes exist   |"
-	@echo "|-------------------------|"
-	@g++ obj/main.o -L./lib -Wl,-rpath=./lib -lencoder_shared -o bin/encoder_shared
-	@g++ obj/second_main.o -L./lib -Wl,-rpath=./lib -ldecoder_shared -o bin/decoder_shared
+obj/main.o: src/main.cpp
+	$(UNSEEN)$P $(DESIGN)
+	$(UNSEEN)$P $(DESIGN1)"Creating encoder.o...    "$(DESIGN2)
+	$(UNSEEN)$P $(DESIGN)
+	$(UNSEEN)$W -c $< -o $@
+	$(UNSEEN)$P $(DESIGN)
 
-#	@g++ src/main.cpp -L lib lib/libencoder_shared.so -o bin/kes
-	@echo "|-------------------------|"
-	@echo "|Text for encoder...      |"
-	@echo "|-------------------------|"
-	@./bin/encoder_shared
-	@echo "|-------------------------|"
-	@echo "|Text for decoder...      |"
-	@echo "|-------------------------|"
-	@./bin/decoder_shared
-	
+obj/encoder.o: encoder/encoder.cpp
+	$(UNSEEN)$P $(DESIGN1)"Creating main.o...       "$(DESIGN2)
+	$(UNSEEN)$P $(DESIGN)
+	$(UNSEEN)$W -c $< -o $@
+	$(UNSEEN)$P $(DESIGN)
+obj/second_main.o: src/second_main.cpp
+	$(UNSEEN)$P $(DESIGN1)"Creating decoder.o...    "$(DESIGN2)
+	$(UNSEEN)$P $(DESIGN)
+	$(UNSEEN)$W -c $< -o $@
+	$(UNSEEN)$P $(DESIGN)
+obj/decoder.o: decoder/decoder.cpp
+	$(UNSEEN)$P $(DESIGN1)"Creating second_main.o..."$(DESIGN2)
+	$(UNSEEN)$P $(DESIGN)
+	$(UNSEEN)$W -c $< -o $@
+
+#obj/%.o: obj
+#	$(eval TEMP = $(patsubst obj/%.o,%,$@))
+#	@"echo Creating $(TEMP)..."
+#	$(UNSEEN)$(W) -c $^$(TEMP).cpp -o obj/$(TEMP).o
+
+lib/libencoder_shared.so: obj/encoder.o
+	$(UNSEEN)$W $(FPIC) $< -o $@	
+lib/libdecoder_shared.so: obj/decoder.o
+	$(UNSEEN)$W $(FPIC) $< -o $@
+linking_first.o: obj/main.o
+	$(UNSEEN)$P $(DESIGN)
+	$(UNSEEN)$P $(DESIGN1)"Path importing...        "$(DESIGN2)
+	$(UNSEEN)$P $(DESIGN)
+	$(UNSEEN)export LD_LIBRARY_PATH=$(LD_LIBRARY_PATH):`pwd`
+	$(UNSEEN)$P $(DESIGN)
+	$(UNSEEN)$P $(DESIGN1)"Shared libraries exist   "$(DESIGN2)
+	$(UNSEEN)$P $(DESIGN)
+	$(UNSEEN)$W $^ $(SHARED) $(-lE) $(MAKE)
+linking_second.o: obj/second_main.o
+	$(UNSEEN)$W $^ $(SHARED) $(-lD) $(MAKE2)
+	$(UNSEEN)$P $(DESIGN)
+	$(UNSEEN)$P $(DESIGN1)"Text for encoder...      "$(DESIGN2)
+	$(UNSEEN)$P $(DESIGN)
+	$(UNSEEN)./$(MAKE)
+	$(UNSEEN)$P $(DESIGN)
+	$(UNSEEN)$P $(DESIGN1)"Text for decoder...      "$(DESIGN2)
+	$(UNSEEN)$P $(DESIGN)
+	$(UNSEEN)./$(MAKE2)
 clean:
-	@echo "|-------------------------|"
-	@echo "|Cleaning directories...  |"
-	@echo "|-------------------------|"
-	@rm -rf lib bin obj
+	$(UNSEEN)$P $(DESIGN)
+	$(UNSEEN)$P $(DESIGN1)"Cleaning directories...  "$(DESIGN2)
+	$(UNSEEN)$P $(DESIGN)
+	$(UNSEEN)$(CLEAN)
